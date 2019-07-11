@@ -9,7 +9,7 @@ type Channel struct {
 	name        string
 }
 
-func (channel Channel) Inject(name string) *Channel {
+func NewChannel(name string) *Channel {
 	return &Channel{
 		make(map[*Client]bool),
 		"",
@@ -27,7 +27,6 @@ func (channel *Channel) ClientCount() int {
 	channel.mutex.RLock()
 	count := len(channel.clients)
 	channel.mutex.RUnlock()
-
 	return count
 }
 

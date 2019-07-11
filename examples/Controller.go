@@ -3,7 +3,7 @@ package examples
 import ("masala")
 
 type MyController struct {
-        builder masala.SqlBuilder
+        builder *masala.SqlBuilder
         limit int
         translatorRepository MyTranslator
 }
@@ -13,7 +13,7 @@ type MyTranslator struct {
 }
 
 func NewMyController() MyController {
-        builder := masala.SqlBuilder{}.Inject()
+        builder := masala.NewSqlBuilder()
         controller := MyController{builder}
         return controller
 }

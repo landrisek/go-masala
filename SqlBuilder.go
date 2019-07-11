@@ -61,7 +61,8 @@ type ITranslator interface {
 	Translate(term string) string
 }
 
-func(builder SqlBuilder) Inject() SqlBuilder {
+func NewSqlBuilder() *SqlBuilder {
+	builder := &SqlBuilder{}
 	configor.Load(&builder.Config, "../config.yml")
 	host, _ := os.Hostname()
 	configor.Load(&builder.Config, "../config." + host + ".yml")
@@ -221,9 +222,10 @@ func(builder SqlBuilder) State(limit int, state State) State {
 	current, _ := strconv.Atoi(builder.state.Paginator.Current)
 	offset := (current - 1) * 20
 	builder.query = strings.TrimRight(builder.query, "AND ") + builder.group + " LIMIT " + strconv.Itoa(limit) + " OFFSET " + strconv.Itoa(offset)
-	query, error := builder.database.Prepare(builder.query)
+	//query, error := builder.database.Prepare(builder.query)
+	_, error := builder.database.Prepare(builder.query)
 	builder.log(error)
-	rows, error := query.Query(builder.arguments...)
+	/*rows, error := query.Query(builder.arguments...)
 	builder.log(error)
 	columns, _ := rows.Columns()
 	data := make([][]byte, len(columns))
@@ -240,7 +242,7 @@ func(builder SqlBuilder) State(limit int, state State) State {
 		}
 		builder.state.Rows = append(builder.state.Rows, row)
 	}
-	rows.Close()
+	rows.Close()*/
 	return builder.state
 }
 

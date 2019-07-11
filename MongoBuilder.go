@@ -18,7 +18,8 @@ type MongoBuilder struct {
 	}
 }
 
-func (builder MongoBuilder) Inject() (MongoBuilder, *mgo.Database) {
+func NewMongoBuilder() (*MongoBuilder, *mgo.Database) {
+	builder := &MongoBuilder{}
 	configor.Load(&builder.Config, "../config.yml")
 	info := &mgo.DialInfo{
 		Addrs:    []string{builder.Config.Mongo.Host},

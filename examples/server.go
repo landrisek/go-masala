@@ -2,6 +2,7 @@ package main
 
 import ("examples"
 	"github.com/jinzhu/configor"
+	"log"
 	"masala"
 	"net/http"
 	"os"
@@ -21,7 +22,7 @@ func main() {
 	configor.Load(&config, "../config.yml")
 	host, _ := os.Hostname()
 	configor.Load(&config, "../config." + host + ".yml")
-	server := masala.Server{}.Inject()
+	server := masala.NewServer()
 	server.SetHeader("Access-Control-Allow-Origin", config.Domain)
 	server.SetHeader("Access-Control-Allow-Credentials", "true")
 	server.SetHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")

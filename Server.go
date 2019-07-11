@@ -13,14 +13,14 @@ type Server struct {
 	channels     map[string]*Channel
 	closeChannel chan string
 	headers map[string]string
-	logger Logger
+	logger *Logger
 	mutex       sync.RWMutex
 	removeClient chan *Client
 	retry int
 	shutdown     chan bool
 }
 
-func (server Server) Inject() *Server {
+func NewServer() *Server {
 	pointer := &Server{make(chan *Client),
 		make(map[string]*Channel),
 		make(chan string),
@@ -35,7 +35,7 @@ func (server Server) Inject() *Server {
 }
 
 func (server *Server) addChannel(name string) *Channel {
-	channel := Channel{}.Inject(name)
+	channel := NewChannel(name)
 	server.mutex.Lock()
 	server.channels[channel.name] = channel
 	server.mutex.Unlock()
@@ -117,7 +117,7 @@ func (server *Server) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		var state State
 		json.Unmarshal([]byte(request.URL.Query()["masala"][0]), &state)
 		lastEventID := request.Header.Get("Last-Event-ID")
-		client := Client{}.Inject(lastEventID, request.URL.Path)
+		client := NewClient(lastEventID, request.URL.Path)
 		server.addClient <- client
 		closeNotify := response.(http.CloseNotifier).CloseNotify()
 		go func() {

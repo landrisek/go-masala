@@ -6,7 +6,7 @@ type Client struct {
 	send chan IMessage
 }
 
-func (client Client) Inject(lastEventID, channel string) *Client {
+func NewClient(lastEventID, channel string) *Client {
 	return &Client{
 		lastEventID,
 		channel,
