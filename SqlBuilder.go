@@ -48,6 +48,7 @@ type SqlBuilder struct {
 		Scheme string
 		Tables map[string]string
 	}
+	group string
 	leftJoin []string
 	logger *log.Logger
 	rows *sql.Rows
@@ -116,7 +117,7 @@ func(builder SqlBuilder) GetState(request *http.Request) State {
 }
 
 func(builder SqlBuilder) Group(group string) SqlBuilder {
-	builder.query = strings.Join([]string{builder.query, " GROUP BY ", group}, " ")
+	builder.group = " GROUP BY " + group + " "
 	return builder
 }
 
@@ -208,9 +209,7 @@ func(builder SqlBuilder) Set(set string) SqlBuilder {
 	return builder
 }
 
-func(builder SqlBuilder) State(group string, limit int, request *http.Request) State {
-	body, _ := ioutil.ReadAll(request.Body)
-	json.Unmarshal(body, &builder.state)
+func(builder SqlBuilder) State(limit int, state State) State {
 	builder.query = "SELECT " + builder.columns  + " FROM " + builder.table + " "
 	if len(builder.state.Where) > 0 {
 		builder.query += "WHERE "
@@ -221,10 +220,7 @@ func(builder SqlBuilder) State(group string, limit int, request *http.Request) S
 	}
 	current, _ := strconv.Atoi(builder.state.Paginator.Current)
 	offset := (current - 1) * 20
-	if len(builder.query) > 0 {
-		group = " GROUP BY " + group
-	}
-	builder.query = strings.TrimRight(builder.query, "AND ") + group + " LIMIT " + strconv.Itoa(limit) + " OFFSET " + strconv.Itoa(offset)
+	builder.query = strings.TrimRight(builder.query, "AND ") + builder.group + " LIMIT " + strconv.Itoa(limit) + " OFFSET " + strconv.Itoa(offset)
 	query, error := builder.database.Prepare(builder.query)
 	builder.log(error)
 	rows, error := query.Query(builder.arguments...)

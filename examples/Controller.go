@@ -1,12 +1,15 @@
 package examples
 
-import ("bytes"
-        "fmt"
-        "masala"
-        "strings")
+import ("masala")
 
 type MyController struct {
         builder masala.SqlBuilder
+        limit int
+        translatorRepository MyTranslator
+}
+
+type MyTranslator struct {
+
 }
 
 func NewMyController() MyController {
@@ -19,12 +22,10 @@ func (controller MyController) Id() string {
         return "MyId"
 }
 
-func (message MyController) String(state masala.State) string {
-        /** ...aplication logic **/
-        fmt.Print(state, "\n")
-        var buffer bytes.Buffer
-        buffer.WriteString(fmt.Sprintf("id: %s\n", "1"))
-        buffer.WriteString(fmt.Sprintf("data: %s\n", strings.Replace("{}", "\n", "\ndata: ", -1)))
-        buffer.WriteString("\n")
-        return buffer.String()
+func (controller MyController) Data(state masala.State) masala.State {
+        return controller.builder.Table("myTable").Select("myColumn").Group("myColumnForGroup").State(masala.State)
+}
+
+func (repository MyTranslator) Translate(term string) string {
+        return term
 }
