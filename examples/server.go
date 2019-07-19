@@ -5,8 +5,7 @@ import ("examples"
 	"log"
 	"masala"
 	"net/http"
-	"os"
-	"time")
+	"os")
 
 type config struct {
 	Domain string
@@ -29,12 +28,7 @@ func main() {
 	server.SetHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers")
 	defer server.Shutdown()
 	http.Handle("/", server)
-	go func() {
-		for {
-			server.SendMessage("/myUrl", examples.NewMyController())
-			time.Sleep(5 * time.Second)
-		}
-	}()
+	go examples.NewController()
 	err := http.ListenAndServeTLS(config.Server.Port, config.Server.Certificate, config.Server.Key, nil)
 	if nil != err {
 		log.Panic(err)

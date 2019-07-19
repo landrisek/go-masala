@@ -114,7 +114,7 @@ func (server *Server) ServeHTTP(response http.ResponseWriter, request *http.Requ
 			headers.Set(header, value)
 	}
 	if "GET" == request.Method {
-		var state State
+		state := &State{}
 		json.Unmarshal([]byte(request.URL.Query()["masala"][0]), &state)
 		lastEventID := request.Header.Get("Last-Event-ID")
 		client := NewClient(lastEventID, request.URL.Path)
@@ -129,9 +129,11 @@ func (server *Server) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		for message := range client.send {
 			var buffer bytes.Buffer
 			buffer.WriteString(fmt.Sprintf("id: %s\n", message.Id()))
-			data, err := json.Marshal(message.Data(state))
+			fmt.Print("start", "\n")
+			message.Data(state)
+			fmt.Print("stop", "\n")
+			data, err := json.Marshal(state)
 			output := string(data)
-			output = "{}"
 			server.logger.Error(err)
 			buffer.WriteString(fmt.Sprintf("data: %s\n", strings.Replace(output, "\n", "\ndata: ", -1)))
 			buffer.WriteString("\n")

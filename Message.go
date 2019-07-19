@@ -1,6 +1,6 @@
 package masala
 
 type IMessage interface {
-	Data(state State) State
+	Data(state *State)
 	Id() string
 }

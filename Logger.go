@@ -61,3 +61,9 @@ func (logger Logger) Message(message string) Logger {
 	return logger
 }
 
+func (logger Logger) Panic(err error) {
+	if nil != err {
+		logger.writer.Output(2, err.Error())
+		log.Panic(err)
+	}
+}
