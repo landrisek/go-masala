@@ -12,28 +12,6 @@ import ("database/sql"
 	"strconv"
 	"strings")
 
-type Paginator struct {
-	Current int
-	Last int
-	Sum int
-}
-
-type State struct {
-	Autocomplete struct {
-		Data map[string]string
-		Position int
-	}
-	Clicked map[string]bool
-	Crops map[string]string
-	Group string
-	Menu string
-	Order map[string]string
-	Paginator Paginator
-	Rows []map[string]string
-	Where map[string]string
-	Wysiwyg map[string]string
-}
-
 type SqlBuilder struct {
 	arguments []interface{}
 	criteria map[string]string
@@ -53,8 +31,6 @@ type SqlBuilder struct {
 	group string
 	leftJoin []string
 	logger *log.Logger
-	rows *sql.Rows
-	state State
 	table string
 	query string
 }
@@ -106,9 +82,9 @@ func(builder *SqlBuilder) AsyncFetchAll(subquery string, arguments []interface{}
 	return rows
 }
 
-func (builder *SqlBuilder) Criteria(state *State) {
+func (builder *SqlBuilder) Criteria(state IState) {
 	var where string
-	for alias, value := range state.Where {
+	for alias, value := range state.GetCriteria() {
 		regex, err := regexp.Compile("(>|<|=|\\s)")
 		builder.log(err)
 		column := regex.ReplaceAllString(alias, "")
@@ -207,14 +183,16 @@ func(builder *SqlBuilder) Order(order string) *SqlBuilder {
 	return builder
 }
 
-func(builder *SqlBuilder) Paginator(limit int, state *State) {
+func(builder *SqlBuilder) Paginator(limit int, state IState) {
 	builder.query = "SELECT COUNT(*) AS count FROM " + builder.table + " "
 	builder.Criteria(state)
 	builder.query = strings.TrimRight(builder.query, "AND ") + builder.group
 	var count int
 	builder.log(builder.database.QueryRow(builder.query, builder.arguments...).Scan(&count))
-	state.Paginator.Sum = count
-	state.Paginator.Last = count / limit
+	paginator := state.GetPaginator()
+	paginator.Sum = count
+	paginator.Last = count / limit
+	state.SetPaginator(paginator)
 }
 
 func(builder *SqlBuilder) Props(request *http.Request, translatorRepository ITranslator) map[string]interface{} {
@@ -244,32 +222,33 @@ func(builder *SqlBuilder) Set(set string) *SqlBuilder {
 	return builder
 }
 
-func(builder *SqlBuilder) Rows(limit int, state *State) {
+func(builder *SqlBuilder) Rows(limit int, state IState) {
 	builder.query = "SELECT " + builder.columns  + " FROM " + builder.table + " "
 	builder.Criteria(state)
-	offset := (state.Paginator.Current - 1) * 20
+	offset := (state.GetPaginator().Current - 1) * 20
 	builder.query = strings.TrimRight(builder.query, "AND ") + builder.group + " LIMIT " + strconv.Itoa(limit) + " OFFSET " + strconv.Itoa(offset)
 	query, err := builder.database.Prepare(builder.query)
 	builder.log(err)
-	rows, err := query.Query(builder.arguments...)
+	result, err := query.Query(builder.arguments...)
 	builder.log(err)
-	columns, err := rows.Columns()
+	columns, err := result.Columns()
 	builder.log(err)
 	data := make([][]byte, len(columns))
 	pointers := make([]interface{}, len(columns))
 	for i := range data {
 		pointers[i] = &data[i]
 	}
-	state.Rows = make([]map[string]string, 0)
-	for rows.Next() {
+	rows := make([]map[string]string, 0)
+	for result.Next() {
 		row := make(map[string]string, 0)
-		rows.Scan(pointers...)
+		result.Scan(pointers...)
 		for key := range data {
 			row[columns[key]] = string(data[key])
 		}
-		state.Rows = append(state.Rows, row)
+		rows = append(rows, row)
 	}
-	rows.Close()
+	state.SetRows(rows)
+	result.Close()
 }
 
 func(builder *SqlBuilder) Table(table string) *SqlBuilder {

@@ -2,21 +2,21 @@ package examples
 
 import ("masala")
 
-type OtherState struct {
+type MyMessage struct {
         builder *masala.SqlBuilder
         limit int
         translatorRepository MyTranslator
 }
 
-func NewOtherState() *OtherState {
+func NewMessage() *MyMessage {
         builder := masala.NewSqlBuilder()
-        return &OtherState{builder}
+        return &MyMessage{builder}
 }
 
-func (message *OtherState) Id() string {
-        return "state"
+func (message *MyMessage) Id() string {
+        return "myState"
 }
 
-func (message OtherState) Data(state *masala.State) {
+func (message *MyMessage) Data(state *masala.State) {
         state.Menu = "myMenu"
 }

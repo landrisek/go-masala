@@ -1,6 +1,11 @@
 package masala
 
+import (
+	"bytes"
+	"net/url"
+)
+
 type IMessage interface {
-	Data(state *State)
+	Data(parameters url.Values, buffer *bytes.Buffer)
 	Id() string
 }

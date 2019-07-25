@@ -2,11 +2,10 @@ package masala
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
-	"sync")
+	"sync"
+)
 
 type Server struct {
 	addClient    chan *Client
@@ -99,10 +98,6 @@ func (server *Server) removeChannel(channel *Channel) {
 	channel.Close()
 }
 
-func (server *Server) SetHeader(header string, value string) {
-	server.headers[header] = value
-}
-
 func (server *Server) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	flusher, ok := response.(http.Flusher)
 	if !ok {
@@ -114,8 +109,6 @@ func (server *Server) ServeHTTP(response http.ResponseWriter, request *http.Requ
 			headers.Set(header, value)
 	}
 	if "GET" == request.Method {
-		state := &State{}
-		json.Unmarshal([]byte(request.URL.Query()["masala"][0]), &state)
 		lastEventID := request.Header.Get("Last-Event-ID")
 		client := NewClient(lastEventID, request.URL.Path)
 		server.addClient <- client
@@ -129,13 +122,7 @@ func (server *Server) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		for message := range client.send {
 			var buffer bytes.Buffer
 			buffer.WriteString(fmt.Sprintf("id: %s\n", message.Id()))
-			fmt.Print("start", "\n")
-			message.Data(state)
-			fmt.Print("stop", "\n")
-			data, err := json.Marshal(state)
-			output := string(data)
-			server.logger.Error(err)
-			buffer.WriteString(fmt.Sprintf("data: %s\n", strings.Replace(output, "\n", "\ndata: ", -1)))
+			message.Data(request.URL.Query(), &buffer)
 			buffer.WriteString("\n")
 			fmt.Fprintf(response, buffer.String())
 			flusher.Flush()
@@ -155,6 +142,11 @@ func (server *Server) SendMessage(channelName string, message IMessage) {
 	} else if channel, ok := server.getChannel(channelName); ok {
 		channel.SendMessage(message)
 	}
+}
+
+func (server *Server) SetHeader(header string, value string) *Server {
+	server.headers[header] = value
+	return server
 }
 
 func (server *Server) start() {

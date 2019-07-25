@@ -1,10 +1,13 @@
-package examples
+package masala
 
-import ("masala")
-
-type IExport interface {
-	masala.IState
-	GetUser() int
+type IState interface {
+	GetCriteria() map[string]string
+	GetGroup() string
+	GetOrder() map[string]string
+	GetPaginator() Paginator
+	SetPaginator(paginator Paginator) IState
+	GetRows() []map[string]string
+	SetRows([]map[string]string) IState
 }
 
 type State struct {
@@ -17,11 +20,16 @@ type State struct {
 	Group string
 	Menu string
 	Order map[string]string
-	Paginator masala.Paginator
+	Paginator Paginator
 	Rows []map[string]string
-	User int
 	Where map[string]string
 	Wysiwyg map[string]string
+}
+
+type Paginator struct {
+	Current int
+	Last int
+	Sum int
 }
 
 func (state *State) GetCriteria() map[string]string {
@@ -36,7 +44,7 @@ func (state *State) GetOrder() map[string]string {
 	return state.Order
 }
 
-func (state *State) GetPaginator() masala.Paginator {
+func (state *State) GetPaginator() Paginator {
 	return state.Paginator
 }
 
@@ -44,16 +52,12 @@ func (state *State) GetRows() []map[string]string {
 	return state.Rows
 }
 
-func (state *State) GetUser() int {
-	return state.User
-}
-
-func (state *State) SetPaginator(paginator masala.Paginator) masala.IState {
+func (state *State) SetPaginator(paginator Paginator) IState {
 	state.Paginator = paginator
 	return state
 }
 
-func (state *State) SetRows(rows []map[string]string) masala.IState {
+func (state *State) SetRows(rows []map[string]string) IState {
 	state.Rows = rows
 	return state
 }
