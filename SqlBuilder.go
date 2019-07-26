@@ -70,12 +70,13 @@ func(builder *SqlBuilder) Arguments(arguments []interface{}) *SqlBuilder {
 }
 
 func(builder *SqlBuilder) AsyncFetchAll(subquery string, arguments []interface{}) *sql.Rows {
-	for _, argument := range builder.arguments {
-		arguments = append([]interface{}{argument}, arguments...)
+	criteria := builder.arguments
+	for _, argument := range arguments {
+		criteria = append(criteria, argument)
 	}
 	query, err := builder.database.Prepare("SELECT " + builder.columns  + " FROM " + builder.table + " " + builder.query + " " + subquery)
 	builder.log(err)
-	rows, err := query.Query(arguments...)
+	rows, err := query.Query(criteria...)
 	if nil != err {
 		log.Panic(err)
 	}

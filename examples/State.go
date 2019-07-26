@@ -20,11 +20,11 @@ type State struct {
 	Paginator masala.Paginator
 	Rows []map[string]string
 	User int
-	Where map[string]string
+	Where map[string]interface{}
 	Wysiwyg map[string]string
 }
 
-func (state *State) GetCriteria() map[string]string {
+func (state *State) GetCriteria() map[string]interface{} {
 	return state.Where
 }
 

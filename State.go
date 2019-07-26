@@ -1,7 +1,7 @@
 package masala
 
 type IState interface {
-	GetCriteria() map[string]string
+	GetCriteria() map[string]interface{}
 	GetGroup() string
 	GetOrder() map[string]string
 	GetPaginator() Paginator
@@ -22,7 +22,7 @@ type State struct {
 	Order map[string]string
 	Paginator Paginator
 	Rows []map[string]string
-	Where map[string]string
+	Where map[string]interface{}
 	Wysiwyg map[string]string
 }
 
@@ -32,7 +32,7 @@ type Paginator struct {
 	Sum int
 }
 
-func (state *State) GetCriteria() map[string]string {
+func (state *State) GetCriteria() map[string]interface{} {
 	return state.Where
 }
 
