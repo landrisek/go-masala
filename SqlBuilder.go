@@ -84,10 +84,10 @@ func(builder *SqlBuilder) AsyncFetchAll(subquery string, arguments []interface{}
 }
 
 func (builder *SqlBuilder) Criteria(state IState) {
+	regex, err := regexp.Compile("(>|<|=|\\s)")
+	builder.log(err)
 	var where string
 	for alias, value := range state.GetCriteria() {
-		regex, err := regexp.Compile("(>|<|=|\\s)")
-		builder.log(err)
 		column := regex.ReplaceAllString(alias, "")
 		if _, ok := builder.criteria[column]; ok {
 			where += alias + " ? AND "
@@ -96,6 +96,17 @@ func (builder *SqlBuilder) Criteria(state IState) {
 	}
 	if len(where) > 0 {
 		builder.query += "WHERE " + strings.TrimRight(where, "AND ")
+	}
+	builder.query += builder.group
+	var order string
+	for alias, asorting := range state.GetOrder() {
+		column := regex.ReplaceAllString(alias, "")
+		if _, ok := builder.criteria[column]; ok {
+			order += " `" + alias + "` " + asorting + ", "
+		}
+	}
+	if len(order) > 0 {
+		builder.query += " ORDER BY " + strings.TrimRight(order, ", ")
 	}
 }
 
@@ -187,7 +198,6 @@ func(builder *SqlBuilder) Order(order string) *SqlBuilder {
 func(builder *SqlBuilder) Paginator(limit int, state IState) {
 	builder.query = "SELECT COUNT(*) AS count FROM " + builder.table + " "
 	builder.Criteria(state)
-	builder.query = strings.TrimRight(builder.query, "AND ") + builder.group
 	var count int
 	builder.log(builder.database.QueryRow(builder.query, builder.arguments...).Scan(&count))
 	paginator := state.GetPaginator()
@@ -227,7 +237,7 @@ func(builder *SqlBuilder) Rows(limit int, state IState) {
 	builder.query = "SELECT " + builder.columns  + " FROM " + builder.table + " "
 	builder.Criteria(state)
 	offset := (state.GetPaginator().Current - 1) * 20
-	builder.query = strings.TrimRight(builder.query, "AND ") + builder.group + " LIMIT " + strconv.Itoa(limit) + " OFFSET " + strconv.Itoa(offset)
+	builder.query += " LIMIT " + strconv.Itoa(limit) + " OFFSET " + strconv.Itoa(offset)
 	query, err := builder.database.Prepare(builder.query)
 	builder.log(err)
 	result, err := query.Query(builder.arguments...)
