@@ -1,36 +1,19 @@
 package masala
 
-import ("github.com/jinzhu/configor"
-	"gopkg.in/mgo.v2"
-	"time"
-)
+import ("gopkg.in/mgo.v2"
+	"time")
 
-type MongoBuilder struct {
-	Config struct {
-		Mongo struct {
-			Host string
-			Name string
-			Password string
-			Port int
-			User string
-		}
-		Tables map[string]string
-	}
-}
-
-func NewMongoBuilder() (*MongoBuilder, *mgo.Database) {
-	builder := &MongoBuilder{}
-	configor.Load(&builder.Config, "../config.yml")
+func NewMongoBuilder(config IConfig) *mgo.Database {
 	info := &mgo.DialInfo{
-		Addrs:    []string{builder.Config.Mongo.Host},
+		Addrs:    []string{config.GetHost()},
 		Timeout:  60 * time.Second,
-		Database: builder.Config.Mongo.Name,
-		Username: builder.Config.Mongo.User,
-		Password: builder.Config.Mongo.Password,
+		Database: config.GetName(),
+		Username: config.GetUser(),
+		Password: config.GetPassword(),
 	}
 	session, err := mgo.DialWithInfo(info)
 	if err != nil {
 		panic(err)
 	}
-	return builder, session.DB(builder.Config.Mongo.Name)
+	return session.DB(config.GetName())
 }

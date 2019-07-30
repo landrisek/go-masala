@@ -18,9 +18,9 @@ type config struct {
 
 func main() {
 	config := config{}
-	configor.Load(&config, "../config.yml")
+	configor.Load(&config, "config.yml")
 	host, _ := os.Hostname()
-	configor.Load(&config, "../config." + host + ".yml")
+	configor.Load(&config, "config." + host + ".yml")
 	server := masala.NewServer()
 	server.SetHeader("Access-Control-Allow-Origin", config.Domain)
 	server.SetHeader("Access-Control-Allow-Credentials", "true")

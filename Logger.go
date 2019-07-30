@@ -17,7 +17,7 @@ type Logger struct {
 
 func NewLogger() *Logger {
 	flag.Parse()
-	var file, error = os.OpenFile("../../log/src.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	var file, error = os.OpenFile("logger.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 	if error != nil {
 		panic(error)
 	}

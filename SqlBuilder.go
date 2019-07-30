@@ -2,7 +2,6 @@ package masala
 
 import ("database/sql"
 	"encoding/json"
-	"github.com/jinzhu/configor"
 	_ "github.com/go-sql-driver/mysql"
 	"io/ioutil"
 	"log"
@@ -17,17 +16,6 @@ type SqlBuilder struct {
 	criteria map[string]string
 	database *sql.DB
 	columns string
-	Config struct {
-		Database struct {
-			Host string
-			Name string
-			Password string
-			Port int
-			User string
-		}
-		Scheme string
-		Tables map[string]string
-	}
 	group string
 	leftJoin []string
 	logger *log.Logger
@@ -39,21 +27,17 @@ type ITranslator interface {
 	Translate(term string) string
 }
 
-func NewSqlBuilder() *SqlBuilder {
+func NewSqlBuilder(config IConfig) *SqlBuilder {
 	builder := &SqlBuilder{}
-	var file, err = os.OpenFile("../../log/builder.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	var file, err = os.OpenFile("builder.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 	if nil != err {
 		log.Panic(err)
 	}
 	builder.logger = log.New(file, "", log.LstdFlags|log.Lshortfile)
-	configor.Load(&builder.Config, "../config.yml")
-	host, err := os.Hostname()
-	builder.log(err)
-	configor.Load(&builder.Config, "../config." + host + ".yml")
-	builder.database, err = sql.Open("mysql", builder.Config.Database.User + ":" +
-											builder.Config.Database.Password  + "@tcp(" +
-											builder.Config.Database.Host + ":" + strconv.Itoa(builder.Config.Database.Port) + ")/" +
-											builder.Config.Database.Name + "?parseTime=true&collation=utf8_czech_ci")
+	builder.database, err = sql.Open("mysql", config.GetUser() + ":" +
+											config.GetPassword()  + "@tcp(" +
+											config.GetHost() + ":" + strconv.Itoa(config.GetPort()) + ")/" +
+											config.GetName() + "?parseTime=true&collation=utf8_czech_ci")
 	builder.database.SetMaxIdleConns(20)
 	builder.log(err)
 	return builder
@@ -204,18 +188,6 @@ func(builder *SqlBuilder) Paginator(limit int, state IState) {
 	paginator.Sum = count
 	paginator.Last = count / limit
 	state.SetPaginator(paginator)
-}
-
-func(builder *SqlBuilder) Props(request *http.Request, translatorRepository ITranslator) map[string]interface{} {
-	link := builder.Config.Scheme + "://" +  request.Host + request.URL.Path + "/"
-	return map[string]interface{}{"download":map[string]string{"label":translatorRepository.Translate("Click here to download your file.")},
-		"export":map[string]string{"label":translatorRepository.Translate("export"),"link":link + "export"},
-		"Paginator":map[string]string{"link":link + "page",
-			"next":translatorRepository.Translate("next"),
-			"page":strings.Title(translatorRepository.Translate("page")),
-			"previous":translatorRepository.Translate("previous"),
-			"sum":translatorRepository.Translate("total")},
-		"submit":map[string]string{"label":translatorRepository.Translate("filter data"),"link":link + "state"}}
 }
 
 func(builder *SqlBuilder) Select(columns string) *SqlBuilder {
