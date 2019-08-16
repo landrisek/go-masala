@@ -12,7 +12,7 @@ type Server struct {
 	channels     map[string]*Channel
 	closeChannel chan string
 	headers map[string]string
-	logger *Logger
+	logger Logger
 	mutex       sync.RWMutex
 	removeClient chan *Client
 	retry int
@@ -24,7 +24,7 @@ func NewServer() *Server {
 		make(map[string]*Channel),
 		make(chan string),
 		map[string]string{"Cache-Control":"no-cache","Content-Type":"text/event-stream","Connection":"keep-alive"},
-		NewLogger(),
+		NewLogger("masala"),
 		sync.RWMutex{},
 		make(chan *Client),
 		1,

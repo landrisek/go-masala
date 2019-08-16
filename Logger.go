@@ -15,13 +15,13 @@ type Logger struct {
 	writer	*log.Logger
 }
 
-func NewLogger() *Logger {
+func NewLogger(path string) Logger {
 	flag.Parse()
-	var file, error = os.OpenFile("logger.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	var file, error = os.OpenFile(path + ".log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 	if error != nil {
 		panic(error)
 	}
-	return &Logger{log.New(file, "", log.LstdFlags|log.Lshortfile)}
+	return Logger{log.New(file, "", log.LstdFlags|log.Lshortfile)}
 }
 
 func (logger Logger) Error(error error) {

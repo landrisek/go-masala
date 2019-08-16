@@ -16,7 +16,7 @@ import (
 type Export struct {
 	builder *masala.SqlBuilder
 	limit int
-	logEvent *masala.Logger
+	logEvent masala.Logger
 	offset chan int
 	source string
 }
@@ -27,7 +27,7 @@ func NewCsv(limit int, source string) *Csv {
 	builder := masala.NewSqlBuilder()
 	return &Export{builder,
 		limit,
-		masala.NewLogger(),
+		masala.NewLogger("examples"),
 		make(chan int),
 		builder.Config.Tables[source]}
 }

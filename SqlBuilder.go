@@ -2,6 +2,7 @@ package masala
 
 import ("database/sql"
 	"encoding/json"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"io/ioutil"
 	"log"
@@ -21,6 +22,11 @@ type SqlBuilder struct {
 	logger *log.Logger
 	table string
 	query string
+}
+
+type ISqlBuilder interface {
+	HealthCheck() bool
+	Table() ISqlBuilder
 }
 
 type ITranslator interface {
@@ -53,12 +59,8 @@ func(builder *SqlBuilder) Arguments(arguments []interface{}) *SqlBuilder {
 	return builder
 }
 
-func(builder *SqlBuilder) AsyncFetchAll(subquery string, arguments []interface{}) *sql.Rows {
-	criteria := builder.arguments
-	for _, argument := range arguments {
-		criteria = append(criteria, argument)
-	}
-	query, err := builder.database.Prepare("SELECT " + builder.columns  + " FROM " + builder.table + " " + builder.query + " " + subquery)
+func(builder *SqlBuilder) AsyncFetchAll(subquery string, criteria []interface{}) *sql.Rows {
+	query, err := builder.database.Prepare(subquery)
 	builder.log(err)
 	rows, err := query.Query(criteria...)
 	if nil != err {
@@ -67,7 +69,7 @@ func(builder *SqlBuilder) AsyncFetchAll(subquery string, arguments []interface{}
 	return rows
 }
 
-func (builder *SqlBuilder) Criteria(state IState) {
+func (builder *SqlBuilder) Criteria(state IState) (string, []interface{}) {
 	regex, err := regexp.Compile("(>|<|=|\\s)")
 	builder.log(err)
 	var where string
@@ -92,6 +94,7 @@ func (builder *SqlBuilder) Criteria(state IState) {
 	if len(order) > 0 {
 		builder.query += " ORDER BY " + strings.TrimRight(order, ", ")
 	}
+	return "SELECT " + builder.columns  + " FROM " + builder.table + " " + builder.query, builder.arguments
 }
 
 func(builder *SqlBuilder) FetchAll() []map[string]string {
@@ -128,6 +131,22 @@ func(builder *SqlBuilder) GetState(request *http.Request) State {
 	var state State
 	json.Unmarshal(body, &state)
 	return state
+}
+
+func (builder *SqlBuilder) HealthCheck(query string, arguments []interface{}) bool {
+	err := builder.database.Ping()
+	builder.log(err)
+	if nil != err {
+		return false
+	}
+	if len(query) > 0 {
+		healthCheck, err := builder.database.Prepare(query)
+		builder.log(err)
+		result, err := healthCheck.Exec(arguments...)
+		builder.log(err)
+		fmt.Print(result)
+	}
+	return true
 }
 
 func(builder *SqlBuilder) Insert(data map[string]interface{}) *SqlBuilder {
